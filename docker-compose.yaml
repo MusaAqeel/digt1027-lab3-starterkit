@@ -1,6 +1,52 @@
+version: '3.8'
 services:
   todo-db:
+    image: postgres:13
+    networks:
+      - todo-network
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   todo-backend:
+    build: ./backend
+    networks:
+      - todo-network
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: todo-db
+    ports:
+      - "5001:5000"
+    depends_on:
+      - todo-db
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
 
   todo-frontend:
+    build: ./frontend
+    networks:
+      - todo-network
+    environment:
+      REACT_APP_API_URL: "http://todo-backend:5000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - todo-backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+networks:
+  todo-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
